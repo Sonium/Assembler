@@ -182,7 +182,7 @@ public abstract class Assembler {
   /* where are we now. */
   public int currentCodeSection = 0; // 0 for text, 1 for data
   /* The next program counter */
-  public int programCounter = 0;
+  public long programCounter = 0;
   /* The next data memory address */
   public int dataMemoryAddress = 0;
   /* The number of lines scanned */
@@ -412,6 +412,7 @@ public abstract class Assembler {
     }
     // Pass 2: Replace labels and output the code and memory.
     // output code
+    programCounter = 0;
     out_code
         .write("MEMORY_INITIALIZATION_RADIX=16;\nMEMORY_INITIALIZATION_VECTOR=\n");
     for (int i = 0; i < instructionCount; i++) {
