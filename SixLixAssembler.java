@@ -15,9 +15,14 @@ public class SixLixAssembler extends Assembler {
 
   @Override
   void processLabel(String sourceCode) {
+    // Place label in hashMap that resolves to current address
     labelMap.put(sourceCode, programCounter);
   }
 
+  /*
+   * Prints out invalid operand error message and the passed instruction and
+   * exits program with code 1
+   */
   private void printOpErr(Instruction instr) {
     System.err.println("Error: Invalid operand at pc " + programCounter);
     instr.print();
@@ -25,6 +30,10 @@ public class SixLixAssembler extends Assembler {
     System.exit(1);
   }
 
+  /*
+   * Prints out immediate range error with the actual size vs required size, the
+   * passed instruction, and exits with code 1
+   */
   private void printRangeErr(Instruction instr, int reqSize, int actSize) {
     System.err.println("Error: Immedate out of range at pc " + programCounter);
     System.err.println("Immediate should fit in " + reqSize
@@ -34,18 +43,26 @@ public class SixLixAssembler extends Assembler {
     System.exit(1);
   }
 
+  /*
+   * Returns the passed number num as a binary string of bit size, size if num
+   * does not fit in size prints the appropriate error and exits program with
+   * code 1. The returned string will size characters long padded appropriately
+   * with 0's or 1's.
+   */
   private String numToStr(Instruction instr, Long num, int size) {
     String numStr = Long.toBinaryString(Math.abs(num));
-    if (numStr.length() > size) {
+    if (numStr.length() > size) { // num in binary > size so we need to error
       printRangeErr(instr, size, numStr.length());
-    } else if (numStr.length() < size) {
-      if (num < 0) {
-        numStr = Long.toBinaryString(num);
+    } else if (numStr.length() < size) { // num needs to be padded
+      if (num < 0) { // need to pad with 1's
+        numStr = Long.toBinaryString(num); // toBinary will sign extend to size
+                                           // of long in bits
+        // truncate to get correct size
+        numStr = numStr.substring(numStr.length() - size, numStr.length());
+      } else { // need to pad with 0's
         int len = numStr.length();
-        numStr = numStr.substring(len - size, len);
-      } else {
-        int len = numStr.length();
-        for (int i = 0; i < size - len; i++) {
+        for (int i = 0; i < size - len; i++) { // pad with 0's until
+                                               // size is correct
           numStr = "0" + numStr;
         }
       }
@@ -53,6 +70,10 @@ public class SixLixAssembler extends Assembler {
     return numStr;
   }
 
+  /*
+   * Gets temporary register number num and exits program if temporary reg is
+   * invalid. Also used for the offset since the same number range is used.
+   */
   private String getTemp(Instruction instr, int num) {
     if (num == 0)
       return "00";
@@ -70,78 +91,119 @@ public class SixLixAssembler extends Assembler {
     return "uh.... god, whut? fucking errors EVERYWHERWER";
   }
 
-  @Override
   String generateCode(Instruction instruction) {
-    // TODO
-    // ADD COMMENTS
-    String code = null;
-    String op = instruction.operator;
-    Operand[] ops = instruction.operands;
-    if (op.equals("addi")) {
-      if (!getOperandType(ops[0].name).equals("register")/*
-                                                          * ||
-                                                          * !getOperandType(ops[
-                                                          * 1].
-                                                          * name).equals("immediate"
-                                                          * )
-                                                          */) {
+
+    String code = null; // Machine code string
+    String op = instruction.operator; // operator name
+    Operand[] ops = instruction.operands; // opperands
+    if (op.equalsIgnoreCase("addi")) { // add immediate
+      if (!getOperandType(ops[0].name).equals("register") /*
+                                                           * ||
+                                                           * !getOperandType(ops
+                                                           * [ 1]. name).equals(
+                                                           * "immediate" )
+                                                           */) {
         printOpErr(instruction);
       }
       Long imm = Long.decode(ops[1].name);
       String immStr = numToStr(instruction, imm, 6);
-      code = "1110" + getReg(instruction, ops[0].name) + immStr;
-    } else if (op.equals("bne")) {
+      code = "1110" + getReg(instruction, ops[0].name) + immStr; // opcode +
+                                                                 // register +
+                                                                 // immediate
+
+    } else if (op.equalsIgnoreCase("bne")) {
+      // verify opperand(s) are correct
       if (!getOperandType(ops[0].name).equals("register")) {
         printOpErr(instruction);
       }
       Long imm = Long.decode(ops[1].name);
       String immStr = numToStr(instruction, imm, 6);
-      code = "1110" + getReg(instruction, ops[0].name) + immStr;
-    } else if (op.equals("blt")) {
+      code = "1110" + getReg(instruction, ops[0].name) + immStr; // opcode +
+                                                                 // register +
+                                                                 // immediate
+                                                                 // (offset)
+
+    } else if (op.equalsIgnoreCase("blt")) {
+      // verify opperand(s) are correct
       if (!getOperandType(ops[0].name).equals("register")) {
         printOpErr(instruction);
       }
       Long imm = Long.decode(ops[1].name);
       String immStr = numToStr(instruction, imm, 6);
-      code = "1110" + getReg(instruction, ops[0].name) + immStr;
-    } else if (op.equals("sra")) {
+      code = "1110" + getReg(instruction, ops[0].name) + immStr; // opcode +
+                                                                 // register +
+                                                                 // immediate
+                                                                 // (offset)
+
+    } else if (op.equalsIgnoreCase("sra")) {
+      // verify opperand(s) are correct
       if (!getOperandType(ops[0].name).equals("register")) {
         printOpErr(instruction);
       }
       Long imm = Long.decode(ops[1].name);
       String immStr = numToStr(instruction, imm, 4);
-      code = "1001" + getReg(instruction, ops[0].name) + immStr + "01";
-    } else if (op.equals("jor")) {
+      code = "1001" + getReg(instruction, ops[0].name) + immStr + "01"; // opcode
+                                                                        // +
+                                                                        // register
+                                                                        // +
+                                                                        // immediate
+                                                                        // +
+                                                                        // function
+                                                                        // code
+
+    } else if (op.equalsIgnoreCase("jor")) {
+      // verify opperand(s) are correct
       if (!getOperandType(ops[0].name).equals("register")) {
         printOpErr(instruction);
       }
       Long imm = Long.decode(ops[1].name);
       String immStr = numToStr(instruction, imm, 4);
-      code = "1001" + getReg(instruction, ops[0].name) + immStr + "11";
-    } else if (op.equals("jr")) {
+      code = "1001" + getReg(instruction, ops[0].name) + immStr + "11"; // opcode
+                                                                        // +
+                                                                        // register
+                                                                        // +
+                                                                        // immediate
+                                                                        // +
+                                                                        // function
+                                                                        // code
+
+    } else if (op.equalsIgnoreCase("jr")) {
+      // verify opperand(s) are correct
       if (!getOperandType(ops[0].name).equals("register")) {
         printOpErr(instruction);
       }
-      code = "1011" + getReg(instruction, ops[0].name) + "000000";
-    } else if (op.equals("lw")) {
+      code = "1011" + getReg(instruction, ops[0].name) + "000000"; // opcode +
+                                                                   // register +
+                                                                   // padding
+
+    } else if (op.equalsIgnoreCase("lw")) {
+      // verify opperand(s) are correct
       if (!getOperandType(ops[0].name).equals("register")
           || !getOperandType(ops[1].name).equals("register")) {
         printOpErr(instruction);
       }
       int num = ops[1].offset;
       String tempReg = getTemp(instruction, num);
-      code = "0110" + getReg(instruction, ops[0].name) + getReg(instruction, ops[1].name)
-          + tempReg;
-    } else if (op.equals("sw")) {
+      code = "0110" + getReg(instruction, ops[0].name)
+          + getReg(instruction, ops[1].name) + tempReg; // opcode + register +
+                                                        // reigster + offset
+                                                        // (tempReg)
+
+    } else if (op.equalsIgnoreCase("sw")) {
+      // verify opperand(s) are correct
       if (!getOperandType(ops[0].name).equals("register")
           || !getOperandType(ops[1].name).equals("register")) {
         printOpErr(instruction);
       }
       int num = ops[1].offset;
       String tempReg = getTemp(instruction, num);
-      code = "0111" + getReg(instruction, ops[0].name) + getReg(instruction, ops[1].name)
-          + tempReg;
-    } else if (op.equals("lix")) {
+      code = "0111" + getReg(instruction, ops[0].name)
+          + getReg(instruction, ops[1].name) + tempReg; // opcode + register +
+                                                        // register + offset
+                                                        // (tempReg)
+
+    } else if (op.equalsIgnoreCase("lix")) {
+      // verify opperand(s) are correct
       if (!getOperandType(ops[0].name).equals("register")
           || !getOperandType(ops[1].name).equals("register")
           || !getOperandType(ops[2].name).equals("label")) {
@@ -149,9 +211,12 @@ public class SixLixAssembler extends Assembler {
       }
       int num = Integer.valueOf(ops[2].name);
       String tempReg = getTemp(instruction, num);
-      code = "0100" + getReg(instruction, ops[0].name) + getReg(instruction, ops[1].name)
-          + tempReg;
-    } else if (op.equals("six")) {
+      code = "0100" + getReg(instruction, ops[0].name)
+          + getReg(instruction, ops[1].name) + tempReg; // opcode + register +
+                                                        // register + temp reg #
+
+    } else if (op.equalsIgnoreCase("six")) {
+      // verify opperand(s) are correct
       if (!getOperandType(ops[0].name).equals("register")
           || !getOperandType(ops[1].name).equals("register")
           || !getOperandType(ops[2].name).equals("label")) {
@@ -159,85 +224,132 @@ public class SixLixAssembler extends Assembler {
       }
       int num = Integer.valueOf(ops[2].name);
       String tempReg = getTemp(instruction, num);
-      code = "0101" + getReg(instruction, ops[0].name) + getReg(instruction, ops[1].name)
-          + tempReg;
-    } else if (op.equals("add")) {
+      code = "0101" + getReg(instruction, ops[0].name)
+          + getReg(instruction, ops[1].name) + tempReg; // opcode + register +
+                                                        // register + temp reg #
+
+    } else if (op.equalsIgnoreCase("add")) {
+      // verify opperand(s) are correct
       if (!getOperandType(ops[0].name).equals("register")
           || !getOperandType(ops[1].name).equals("register")) {
         printOpErr(instruction);
       }
-      code = "0000" + getReg(instruction, ops[0].name) + getReg(instruction, ops[1].name) + "00";
-    } else if (op.equals("sub")) {
+      code = "0000" + getReg(instruction, ops[0].name)
+          + getReg(instruction, ops[1].name) + "00";// opcode + register +
+                                                    // register + function code
+
+    } else if (op.equalsIgnoreCase("sub")) {
+      // verify opperand(s) are correct
       if (!getOperandType(ops[0].name).equals("register")
           || !getOperandType(ops[1].name).equals("register")) {
         printOpErr(instruction);
       }
-      code = "0000" + getReg(instruction, ops[0].name) + getReg(instruction, ops[1].name) + "01";
-    } else if (op.equals("nor")) {
+      code = "0000" + getReg(instruction, ops[0].name)
+          + getReg(instruction, ops[1].name) + "01";// opcode + register +
+                                                    // register + function code
+
+    } else if (op.equalsIgnoreCase("nor")) {
+      // verify opperand(s) are correct
       if (!getOperandType(ops[0].name).equals("register")
           || !getOperandType(ops[1].name).equals("register")) {
         printOpErr(instruction);
       }
-      code = "0000" + getReg(instruction, ops[0].name) + getReg(instruction, ops[1].name) + "10";
-    } else if (op.equals("mv")) {
+      code = "0000" + getReg(instruction, ops[0].name)
+          + getReg(instruction, ops[1].name) + "10";// opcode + register +
+                                                    // register + function code
+
+    } else if (op.equalsIgnoreCase("mv")) {
+      // verify opperand(s) are correct
       if (!getOperandType(ops[0].name).equals("register")
           || !getOperandType(ops[1].name).equals("register")) {
         printOpErr(instruction);
       }
-      code = "0000" + getReg(instruction, ops[0].name) + getReg(instruction, ops[1].name) + "11";
-    } else if (op.equals("in")) {
+      code = "0000" + getReg(instruction, ops[0].name)
+          + getReg(instruction, ops[1].name) + "11";// opcode + register +
+                                                    // register + function code
+
+    } else if (op.equalsIgnoreCase("in")) {
+      // verify opperand(s) are correct
       if (!getOperandType(ops[0].name).equals("register")
           || !getOperandType(ops[1].name).equals("register")) {
         printOpErr(instruction);
       }
-      code = "0001" + getReg(instruction, ops[0].name) + getReg(instruction, ops[1].name) + "00";
-    } else if (op.equals("out")) {
+      code = "0001" + getReg(instruction, ops[0].name)
+          + getReg(instruction, ops[1].name) + "00"; // opcode + register +
+                                                     // register + function code
+
+    } else if (op.equalsIgnoreCase("out")) {
+      // verify opperand(s) are correct
       if (!getOperandType(ops[0].name).equals("register")
           || !getOperandType(ops[1].name).equals("register")) {
         printOpErr(instruction);
       }
-      code = "0001" + getReg(instruction, ops[0].name) + getReg(instruction, ops[1].name) + "01";
-    } else if (op.equals("j")) {
+      code = "0001" + getReg(instruction, ops[0].name)
+          + getReg(instruction, ops[1].name) + "01"; // opcode + register +
+                                                     // register + function code
+
+    } else if (op.equalsIgnoreCase("j")) {
       Long imm = Long.decode(ops[0].name);
       String immStr = numToStr(instruction, imm, 9);
-      code = "1000" + immStr + "0";
-    } else if (op.equals("jal")) {
+      code = "1000" + immStr + "0"; // opcode + immediate + function code
+
+    } else if (op.equalsIgnoreCase("jal")) {
       Long imm = Long.decode(ops[0].name);
       String immStr = numToStr(instruction, imm, 9);
-      code = "1000" + immStr + "1";
-    } else if (op.equals("sloi")) {
+      code = "1000" + immStr + "1"; // opcode + immediate + function code
+
+    } else if (op.equalsIgnoreCase("sloi")) {
       Long imm = Long.decode(ops[0].name);
       String immStr = numToStr(instruction, imm, 10);
-      code = "1010" + immStr;
-    } else if (op.equals("halt")) {
-      code = "1111" + "0000000000";
-    } else if (op.equals("li")) {
-      // long num = Long.parseLong(instruction.operands[0].name, 16);
-      int reqCodeLen = 0;
-      int numInst = 0;
+      code = "1010" + immStr; // opcode + immediate
+
+    } else if (op.equalsIgnoreCase("halt")) {
+      code = "1111" + "0000000000"; // opcode + padding
+
+    } else if (op.equalsIgnoreCase("li")) {
+      // li can be a dynamic number of instructions depending on the size of
+      // the immediate thus is a bit more complex.
+      int reqCodeLen = 0; // sets how big variable code should be when doing
+                          // length check
+      int numInst = 0; // sets the number of instructions used
       long num = Long.decode(instruction.operands[0].name);
       String numBits = numToStr(instruction, num, 34);
-      if (num < 1024) {
+      if (num < 1024) { // if the immediate is bigger than 10 bits
         reqCodeLen = 14 + 14 + 2;
-        code = "0000" + getReg(instruction, "$v0") + getReg(instruction, "$0") + "11" + ",\n";
+        code = "0000" + getReg(instruction, "$v0") + getReg(instruction, "$0")
+            + "11" + ",\n";
+        // need to shift in to be "shifted" in: 10 bits
         code += "1010" + numBits.substring(24, 34);
         numInst = 2;
-      } else if (num < 1024 * 1024) {
+
+      } else if (num < 1024 * 1024) { // if immediate is bigger than 20bits
         reqCodeLen = 14 + 14 + 14 + 2 + 2;
-        code = "0000" + getReg(instruction, "$v0") + getReg(instruction, "$0") + "11" + ",\n";
-        code += "1010" + numBits.substring(14, 24) + ",\n";
-        code += "1010" + numBits.substring(24, 34);
+        code = "0000" + getReg(instruction, "$v0") + getReg(instruction, "$0")
+            + "11" + ",\n";
+        // total bits needed to be "shifted" in: 20 bits
+        code += "1010" + numBits.substring(14, 24) + ",\n"; // shift in 10 MSB
+        code += "1010" + numBits.substring(24, 34); // shift in next 10 bits
         numInst = 3;
-      } else {
-        reqCodeLen = 14 + 14 + 14 + 14 + 2 + 2 + 2; // Check for correct
-                                                    // size, convert to
-                                                    // bitfield
-        code = "1010" + "000000" + numBits.substring(0, 4) + ",\n";
-        code += "1010" + numBits.substring(4, 14) + ",\n";
-        code += "1010" + numBits.substring(14, 24) + ",\n";
-        code += "1010" + numBits.substring(24, 34);
+
+      } else { // we need to use the max number of instructions
+        reqCodeLen = 14 + 14 + 14 + 14 + 2 + 2 + 2; // Used to check if variable
+                                                    // code is the
+                                                    // expected size
+
+        // total bits needed to be "shifted" in: 34 bits
+        code = "1010" + "000000" + numBits.substring(0, 4) + ",\n"; // "shift"
+                                                                    // in 4 MSB
+        code += "1010" + numBits.substring(4, 14) + ",\n"; // "shift" in next 10
+                                                           // bits
+        code += "1010" + numBits.substring(14, 24) + ",\n"; // "shift" in next
+                                                            // other 10
+        code += "1010" + numBits.substring(24, 34); // "shift" in next last 10
+                                                    // bits
+        // total "shifted" bits 34
         numInst = 4;
       }
+      // verify the Machine code for instruction is the right size error out
+      // otherwise
       if (code.length() != reqCodeLen) {
         System.err.println("Error processing instruction at pc "
             + programCounter);
@@ -249,7 +361,7 @@ public class SixLixAssembler extends Assembler {
       }
       programCounter += numInst;
       return code;
-    } else if (op.equals("la")) {
+    } else if (op.equalsIgnoreCase("la")) {
       Long num = Long.decode(ops[0].name);
       String numBits = numToStr(instruction, num, 34); // Check for correct
                                                        // size, convert to
@@ -273,21 +385,29 @@ public class SixLixAssembler extends Assembler {
       }
       programCounter += 4;
       return code;
+
     } else {
+      // no instruction is not defined in our ISA
       System.err.println("Error unrecognized instruction at pc "
           + programCounter);
       instruction.print();
       System.out.flush();
       System.exit(1);
     }
+
+    // all instructions except for li an la hit this section
+
+    // verifies Machine code is in binary otherwise errors out
     if (!isBinary(code)) {
       System.err
           .println("Error processing instruction at pc " + programCounter);
-      System.err.println("Machine code is not binary. Machine code is: " + code);
+      System.err
+          .println("Machine code is not binary. Machine code is: " + code);
       instruction.print();
       System.out.flush();
       System.exit(1);
     }
+    // verifies machine code is 14 bits otherwise errors out
     if (code.length() != 14) {
       System.err
           .println("Error processing instruction at pc " + programCounter);
@@ -297,18 +417,18 @@ public class SixLixAssembler extends Assembler {
       System.out.flush();
       System.exit(1);
     }
-    programCounter += 1;
+    programCounter += 1; // increment PC for error messages
     return code;
   }
 
   @Override
   void updateProgramCounter(Instruction instruction) {
     // la takes 4 sloi instructions
-    if (instruction.operator.equals("la")) {
+    if (instruction.operator.equalsIgnoreCase("la")) {
       programCounter += 4;
     }
     // dynamic pseudo instruction li varies depending on immediate size
-    else if (instruction.operator.equals("li")) {
+    else if (instruction.operator.equalsIgnoreCase("li")) {
       // long num = Long.parseLong(instruction.operands[0].name, 16);
       long num = Long.decode(instruction.operands[0].name);
       if (num < 1024) {
@@ -319,12 +439,13 @@ public class SixLixAssembler extends Assembler {
         programCounter += 4; // zero out or 4 solis
       }
     } else {
-      programCounter += 1;
+      programCounter += 1; // no pseudo instructions
     }
   }
 
   @Override
   void initialization() throws IOException {
+    // set our register opcodes
     regMap.put("$0", "0000");
     regMap.put("$s0", "0001");
     regMap.put("$s1", "0010");
@@ -342,11 +463,16 @@ public class SixLixAssembler extends Assembler {
     regMap.put("$sp", "1110");
     regMap.put("$ra", "1111");
   }
-  
-  private String getReg(Instruction instr, String reg){
+
+  /*
+   * Gets the register named "string" for instruction instr. Prints error and
+   * quits program with code 1 if register is invalid
+   */
+  private String getReg(Instruction instr, String reg) {
     String res = regMap.get(reg);
-    if(res == null){
-      System.err.println("Error looking up register: " + reg + " at PC " + programCounter);
+    if (res == null) {
+      System.err.println("Error looking up register: " + reg + " at PC "
+          + programCounter);
       instr.print();
       System.out.flush();
       System.exit(1);
@@ -354,7 +480,11 @@ public class SixLixAssembler extends Assembler {
     return res;
   }
 
- private boolean isBinary(String s) {
+  /*
+   * check if a string contains only 1's and 0'sused to make sure machine code
+   * is binary
+   */
+  private boolean isBinary(String s) {
     for (int i = 0; i < s.length(); i++) {
       if (s.charAt(i) != '0' && s.charAt(i) != '1') {
         return false;
@@ -366,7 +496,8 @@ public class SixLixAssembler extends Assembler {
   @Override
   void replaceInstructionLabel(Instruction instruction) {
 
-    if (instruction.operator.equals("jal") || instruction.operator.equals("j")) {
+    if (instruction.operator.equalsIgnoreCase("jal")
+        || instruction.operator.equalsIgnoreCase("j")) {
       // Check that operand is label
       if (!getOperandType(instruction.operands[0].name).equals("label")) {
         printOpErr(instruction);
@@ -391,8 +522,8 @@ public class SixLixAssembler extends Assembler {
       instruction.operands[0].name = String.valueOf(offset);
     }
 
-    else if (instruction.operator.equals("bne")
-        || instruction.operator.equals("blt")) {
+    else if (instruction.operator.equalsIgnoreCase("bne")
+        || instruction.operator.equalsIgnoreCase("blt")) {
       // Check that operand is label
       if (!getOperandType(instruction.operands[1].name).equals("label")) {
         printOpErr(instruction);
@@ -416,8 +547,7 @@ public class SixLixAssembler extends Assembler {
 
       // subtract programCounter from addr to get offset for jump
       instruction.operands[1].name = String.valueOf(offset);
-    }
-    else if (instruction.operator.equals("la")) {
+    } else if (instruction.operator.equalsIgnoreCase("la")) {
       // Check that operand is label
       if (!getOperandType(instruction.operands[0].name).equals("label")) {
         printOpErr(instruction);
@@ -437,7 +567,8 @@ public class SixLixAssembler extends Assembler {
 
   @Override
   void replaceMemoryLabel() {
-
+    // TODO
+    // maybe?
   }
 
   public static void main(String[] arg) throws IOException {
