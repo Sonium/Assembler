@@ -22,6 +22,7 @@ public class SixLixAssembler extends Assembler {
     System.err.println("Error: Invalid operand at pc " + programCounter);
     instr.print();
     System.out.flush();
+    System.exit(1);
   }
 
   private void printRangeErr(Instruction instr, int reqSize, int actSize) {
@@ -40,7 +41,8 @@ public class SixLixAssembler extends Assembler {
     } else if (numStr.length() < size) {
       if (num < 0) {
         numStr = Long.toBinaryString(num);
-        numStr = numStr.substring(numStr.length() - 6, numStr.length());
+        int len = numStr.length();
+        numStr = numStr.substring(len-size, len);
       } else {
         int len = numStr.length();
         for (int i = 0; i < size - len; i++) {
@@ -76,41 +78,54 @@ public class SixLixAssembler extends Assembler {
     String op = instruction.operator;
     Operand[] ops = instruction.operands;
     if (op.equals("addi")) {
-      if (getOperandType(ops[0].name).equals("register")
-          || getOperandType(ops[1].name).equals("immediate")) {
+      if (!getOperandType(ops[0].name).equals("register")/*
+                                                          * ||
+                                                          * !getOperandType(ops[
+                                                          * 1].
+                                                          * name).equals("immediate"
+                                                          * )
+                                                          */) {
         printOpErr(instruction);
       }
       Long imm = Long.decode(ops[1].name);
       String immStr = numToStr(instruction, imm, 6);
       code = "1110" + regMap.get(ops[0].name) + immStr;
     } else if (op.equals("bne")) {
-      if (getOperandType(ops[0].name).equals("register")) {
+      if (!getOperandType(ops[0].name).equals("register")) {
         printOpErr(instruction);
       }
       Long imm = Long.decode(ops[1].name);
       String immStr = numToStr(instruction, imm, 6);
       code = "1110" + regMap.get(ops[0].name) + immStr;
     } else if (op.equals("blt")) {
-      if (getOperandType(ops[0].name).equals("register")) {
+      if (!getOperandType(ops[0].name).equals("register")) {
         printOpErr(instruction);
       }
       Long imm = Long.decode(ops[1].name);
       String immStr = numToStr(instruction, imm, 6);
       code = "1110" + regMap.get(ops[0].name) + immStr;
-    } else if (op.equals("sll")) {
-      // TODO
     } else if (op.equals("sra")) {
-      // TODO
+      if (!getOperandType(ops[0].name).equals("register")) {
+        printOpErr(instruction);
+      }
+      Long imm = Long.decode(ops[1].name);
+      String immStr = numToStr(instruction, imm, 4);
+      code = "1001" + regMap.get(ops[0].name) + immStr + "01";
     } else if (op.equals("jor")) {
-      // TODO
+      if (!getOperandType(ops[0].name).equals("register")) {
+        printOpErr(instruction);
+      }
+      Long imm = Long.decode(ops[1].name);
+      String immStr = numToStr(instruction, imm, 4);
+      code = "1001" + regMap.get(ops[0].name) + immStr + "11";
     } else if (op.equals("jr")) {
-      if (getOperandType(ops[0].name).equals("register")) {
+      if (!getOperandType(ops[0].name).equals("register")) {
         printOpErr(instruction);
       }
       code = "1011" + regMap.get(ops[0].name) + "000000";
     } else if (op.equals("lw")) {
-      if (getOperandType(ops[0].name).equals("register")
-          || getOperandType(ops[1].name).equals("register")) {
+      if (!getOperandType(ops[0].name).equals("register")
+          || !getOperandType(ops[1].name).equals("register")) {
         printOpErr(instruction);
       }
       int num = ops[1].offset;
@@ -118,8 +133,8 @@ public class SixLixAssembler extends Assembler {
       code = "0110" + regMap.get(ops[0].name) + regMap.get(ops[1].name)
           + tempReg;
     } else if (op.equals("sw")) {
-      if (getOperandType(ops[0].name).equals("register")
-          || getOperandType(ops[1].name).equals("register")) {
+      if (!getOperandType(ops[0].name).equals("register")
+          || !getOperandType(ops[1].name).equals("register")) {
         printOpErr(instruction);
       }
       int num = ops[1].offset;
@@ -127,9 +142,9 @@ public class SixLixAssembler extends Assembler {
       code = "0111" + regMap.get(ops[0].name) + regMap.get(ops[1].name)
           + tempReg;
     } else if (op.equals("lix")) {
-      if (getOperandType(ops[0].name).equals("register")
-          || getOperandType(ops[1].name).equals("register")
-          || getOperandType(ops[2].name).equals("label")) {
+      if (!getOperandType(ops[0].name).equals("register")
+          || !getOperandType(ops[1].name).equals("register")
+          || !getOperandType(ops[2].name).equals("label")) {
         printOpErr(instruction);
       }
       int num = Integer.valueOf(ops[2].name);
@@ -137,9 +152,9 @@ public class SixLixAssembler extends Assembler {
       code = "0100" + regMap.get(ops[0].name) + regMap.get(ops[1].name)
           + tempReg;
     } else if (op.equals("six")) {
-      if (getOperandType(ops[0].name).equals("register")
-          || getOperandType(ops[1].name).equals("register")
-          || getOperandType(ops[2].name).equals("label")) {
+      if (!getOperandType(ops[0].name).equals("register")
+          || !getOperandType(ops[1].name).equals("register")
+          || !getOperandType(ops[2].name).equals("label")) {
         printOpErr(instruction);
       }
       int num = Integer.valueOf(ops[2].name);
@@ -147,38 +162,38 @@ public class SixLixAssembler extends Assembler {
       code = "0101" + regMap.get(ops[0].name) + regMap.get(ops[1].name)
           + tempReg;
     } else if (op.equals("add")) {
-      if (getOperandType(ops[0].name).equals("register")
-          || getOperandType(ops[1].name).equals("register")) {
+      if (!getOperandType(ops[0].name).equals("register")
+          || !getOperandType(ops[1].name).equals("register")) {
         printOpErr(instruction);
       }
       code = "0000" + regMap.get(ops[0].name) + regMap.get(ops[1].name) + "00";
     } else if (op.equals("sub")) {
-      if (getOperandType(ops[0].name).equals("register")
-          || getOperandType(ops[1].name).equals("register")) {
+      if (!getOperandType(ops[0].name).equals("register")
+          || !getOperandType(ops[1].name).equals("register")) {
         printOpErr(instruction);
       }
       code = "0000" + regMap.get(ops[0].name) + regMap.get(ops[1].name) + "01";
     } else if (op.equals("nor")) {
-      if (getOperandType(ops[0].name).equals("register")
-          || getOperandType(ops[1].name).equals("register")) {
+      if (!getOperandType(ops[0].name).equals("register")
+          || !getOperandType(ops[1].name).equals("register")) {
         printOpErr(instruction);
       }
       code = "0000" + regMap.get(ops[0].name) + regMap.get(ops[1].name) + "10";
     } else if (op.equals("mv")) {
-      if (getOperandType(ops[0].name).equals("register")
-          || getOperandType(ops[1].name).equals("register")) {
+      if (!getOperandType(ops[0].name).equals("register")
+          || !getOperandType(ops[1].name).equals("register")) {
         printOpErr(instruction);
       }
       code = "0000" + regMap.get(ops[0].name) + regMap.get(ops[1].name) + "11";
     } else if (op.equals("in")) {
-      if (getOperandType(ops[0].name).equals("register")
-          || getOperandType(ops[1].name).equals("register")) {
+      if (!getOperandType(ops[0].name).equals("register")
+          || !getOperandType(ops[1].name).equals("register")) {
         printOpErr(instruction);
       }
       code = "0001" + regMap.get(ops[0].name) + regMap.get(ops[1].name) + "00";
     } else if (op.equals("out")) {
-      if (getOperandType(ops[0].name).equals("register")
-          || getOperandType(ops[1].name).equals("register")) {
+      if (!getOperandType(ops[0].name).equals("register")
+          || !getOperandType(ops[1].name).equals("register")) {
         printOpErr(instruction);
       }
       code = "0001" + regMap.get(ops[0].name) + regMap.get(ops[1].name) + "01";
@@ -197,21 +212,81 @@ public class SixLixAssembler extends Assembler {
     } else if (op.equals("halt")) {
       code = "1111" + "0000000000";
     } else if (op.equals("li")) {
-      // TODO
-      // RETURN YOURSELF
+      // long num = Long.parseLong(instruction.operands[0].name, 16);
+      int reqCodeLen = 0;
+      int numInst = 0;
+      long num = Long.decode(instruction.operands[0].name);
+      String numBits = numToStr(instruction, num, 34);
+      if (num < 1024) {
+        reqCodeLen = 14 + 14 + 2;
+        code = "0000" + regMap.get("$v0") + regMap.get("$0") + "11" + ",\n";
+        code += "1010" + numBits.substring(24, 34);
+        numInst = 2;
+      } else if (num < 1024 * 1024) {
+        reqCodeLen = 14 + 14 + 14 + 2 + 2;
+        code = "0000" + regMap.get("$v0") + regMap.get("$0") + "11" + ",\n";
+        code += "1010" + numBits.substring(14, 24) + ",\n";
+        code += "1010" + numBits.substring(24, 34);
+        numInst = 3;
+      } else {
+        reqCodeLen = 14 + 14 + 14 + 14 + 2 + 2 + 2; // Check for correct
+                                                    // size, convert to
+                                                    // bitfield
+        code = "1010" + "000000" + numBits.substring(0, 4) + ",\n";
+        code += "1010" + numBits.substring(4, 14) + ",\n";
+        code += "1010" + numBits.substring(14, 24) + ",\n";
+        code += "1010" + numBits.substring(24, 34);
+        numInst = 4;
+      }
+      if (code.length() != reqCodeLen) {
+        System.err.println("Error processing instruction at pc "
+            + programCounter);
+        System.err.println("Machine code is " + code.length() + " bits but should be " + reqCodeLen + " bits");
+        instruction.print();
+        System.out.flush();
+        System.exit(1);
+      }
+      programCounter += numInst;
+      return code;
     } else if (op.equals("la")) {
-      // TODO
-      // RETURN YOURSELF
-    }
-
-    if (code.length() != 14) {
-      System.err
-          .println("Error processing instruction at pc " + programCounter);
-      System.err.println("Machine code is not 14 bits");
+      Long num = Long.decode(ops[0].name);
+      String numBits = numToStr(instruction, num, 34); // Check for correct
+                                                       // size, convert to
+                                                       // bitfield
+      code = "1010" + "000000" + numBits.substring(0, 4) + ",\n";
+      /* numToStr(instruction, (num>>30)%1024, 10) */
+      code += "1010" + numBits.substring(4, 14) + ",\n";
+      /* numToStr(instruction, (num>>20)%1024, 10) */
+      code += "1010" + numBits.substring(14, 24) + ",\n";
+      /* numToStr(instruction, (num>>10)%1024, 10) */
+      code += "1010" + numBits.substring(24, 34);
+      /* numToStr(instruction, num%1024, 10) */
+      if (code.length() != 14 * 4 + 2 * 3) {
+        System.err.println("Error processing instruction at pc "
+            + programCounter);
+        System.err.println("Machine code is " + code.length() + " bits but should be 34 bits");
+        instruction.print();
+        System.out.flush();
+        System.exit(1);
+      }
+      programCounter += 4;
+      return code;
+    } else {
+      System.err.println("Error unrecognized instruction at pc "
+          + programCounter);
       instruction.print();
       System.out.flush();
       System.exit(1);
     }
+    if (code.length() != 14) {
+      System.err
+          .println("Error processing instruction at pc " + programCounter);
+      System.err.println("Machine code is " + code.length() + " bits but should be 14 bits");
+      instruction.print();
+      System.out.flush();
+      System.exit(1);
+    }
+    programCounter += 1;
     return code;
   }
 
@@ -262,7 +337,7 @@ public class SixLixAssembler extends Assembler {
 
     if (instruction.operator.equals("jal") || instruction.operator.equals("j")) {
       // Check that operand is label
-      if (getOperandType(instruction.operands[0].name).equals("label")) {
+      if (!getOperandType(instruction.operands[0].name).equals("label")) {
         printOpErr(instruction);
       }
       // Get address of label from map
@@ -288,7 +363,7 @@ public class SixLixAssembler extends Assembler {
     else if (instruction.operator.equals("bne")
         || instruction.operator.equals("blt")) {
       // Check that operand is label
-      if (getOperandType(instruction.operands[1].name).equals("label")) {
+      if (!getOperandType(instruction.operands[1].name).equals("label")) {
         printOpErr(instruction);
       }
       // Get address of label from map
@@ -314,7 +389,7 @@ public class SixLixAssembler extends Assembler {
 
     else if (instruction.operator.equals("la")) {
       // Check that operand is label
-      if (getOperandType(instruction.operands[0].name).equals("label")) {
+      if (!getOperandType(instruction.operands[0].name).equals("label")) {
         printOpErr(instruction);
       }
       // Get address of label from map
