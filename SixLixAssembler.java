@@ -567,8 +567,7 @@ public class SixLixAssembler extends Assembler {
 
   @Override
   void replaceMemoryLabel() {
-    // TODO
-    // maybe?
+
   }
 
   public static void main(String[] arg) throws IOException {
