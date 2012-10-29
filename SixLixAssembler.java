@@ -315,36 +315,40 @@ public class SixLixAssembler extends Assembler {
       long num = Long.decode(instruction.operands[0].name);
       String numBits = numToStr(instruction, num, 34);
       if (num < 1024) { // if the immediate is bigger than 10 bits
-        reqCodeLen = 14 + 14 + 2;
-        code = "0000" + getReg(instruction, "$v0") + getReg(instruction, "$0")
-            + "11" + ",\n";
+        reqCodeLen = 17 * 2 + 2;
+        code = "0000000" + getReg(instruction, "$v0")
+            + getReg(instruction, "$0") + "11" + ",\n";
         // need to shift in to be "shifted" in: 10 bits
-        code += "1010" + numBits.substring(24, 34);
+        code += "0001010" + numBits.substring(24, 34);
         numInst = 2;
 
       } else if (num < 1024 * 1024) { // if immediate is bigger than 20bits
-        reqCodeLen = 14 + 14 + 14 + 2 + 2;
-        code = "0000" + getReg(instruction, "$v0") + getReg(instruction, "$0")
-            + "11" + ",\n";
+        reqCodeLen = 17 * 3 + 2 * 2;
+        code = "0000000" + getReg(instruction, "$v0")
+            + getReg(instruction, "$0") + "11" + ",\n";
         // total bits needed to be "shifted" in: 20 bits
-        code += "1010" + numBits.substring(14, 24) + ",\n"; // shift in 10 MSB
-        code += "1010" + numBits.substring(24, 34); // shift in next 10 bits
+        code += "0001010" + numBits.substring(14, 24) + ",\n"; // shift in 10
+                                                               // MSB
+        code += "0001010" + numBits.substring(24, 34); // shift in next 10 bits
         numInst = 3;
 
       } else { // we need to use the max number of instructions
-        reqCodeLen = 14 + 14 + 14 + 14 + 2 + 2 + 2; // Used to check if variable
-                                                    // code is the
-                                                    // expected size
+        reqCodeLen = 17 * 4 + 2 * 3; // Used to check if variable
+                                     // code is the
+                                     // expected size
 
         // total bits needed to be "shifted" in: 34 bits
-        code = "1010" + "000000" + numBits.substring(0, 4) + ",\n"; // "shift"
-                                                                    // in 4 MSB
-        code += "1010" + numBits.substring(4, 14) + ",\n"; // "shift" in next 10
-                                                           // bits
-        code += "1010" + numBits.substring(14, 24) + ",\n"; // "shift" in next
-                                                            // other 10
-        code += "1010" + numBits.substring(24, 34); // "shift" in next last 10
-                                                    // bits
+        code = "0001010" + "000000" + numBits.substring(0, 4) + ",\n"; // "shift"
+        // in 4 MSB
+        code += "0001010" + numBits.substring(4, 14) + ",\n"; // "shift" in next
+                                                              // 10
+        // bits
+        code += "0001010" + numBits.substring(14, 24) + ",\n"; // "shift" in
+                                                               // next
+        // other 10
+        code += "0001010" + numBits.substring(24, 34); // "shift" in next last
+                                                       // 10
+        // bits
         // total "shifted" bits 34
         numInst = 4;
       }
@@ -366,15 +370,15 @@ public class SixLixAssembler extends Assembler {
       String numBits = numToStr(instruction, num, 34); // Check for correct
                                                        // size, convert to
                                                        // bitfield
-      code = "1010" + "000000" + numBits.substring(0, 4) + ",\n";
+      code = "0001010" + "000000" + numBits.substring(0, 4) + ",\n";
       /* numToStr(instruction, (num>>30)%1024, 10) */
-      code += "1010" + numBits.substring(4, 14) + ",\n";
+      code += "0001010" + numBits.substring(4, 14) + ",\n";
       /* numToStr(instruction, (num>>20)%1024, 10) */
-      code += "1010" + numBits.substring(14, 24) + ",\n";
+      code += "0001010" + numBits.substring(14, 24) + ",\n";
       /* numToStr(instruction, (num>>10)%1024, 10) */
-      code += "1010" + numBits.substring(24, 34);
+      code += "0001010" + numBits.substring(24, 34);
       /* numToStr(instruction, num%1024, 10) */
-      if (code.length() != 14 * 4 + 2 * 3) {
+      if (code.length() != 17 * 4 + 2 * 3) {
         System.err.println("Error processing instruction at pc "
             + programCounter);
         System.err.println("Machine code is " + code.length()
@@ -394,7 +398,7 @@ public class SixLixAssembler extends Assembler {
       System.out.flush();
       System.exit(1);
     }
-
+    code = "000" + code;
     // all instructions except for li an la hit this section
 
     // verifies Machine code is in binary otherwise errors out
@@ -408,11 +412,11 @@ public class SixLixAssembler extends Assembler {
       System.exit(1);
     }
     // verifies machine code is 14 bits otherwise errors out
-    if (code.length() != 14) {
+    if (code.length() != 17) {
       System.err
           .println("Error processing instruction at pc " + programCounter);
       System.err.println("Machine code is " + code.length()
-          + " bits but should be 14 bits");
+          + " bits but should be 17 bits");
       instruction.print();
       System.out.flush();
       System.exit(1);
