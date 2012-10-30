@@ -414,7 +414,7 @@ public abstract class Assembler {
     // output code
     programCounter = 0;
     out_code
-        .write("MEMORY_INITIALIZATION_RADIX=16;\nMEMORY_INITIALIZATION_VECTOR=\n");
+        .write("MEMORY_INITIALIZATION_RADIX=2;\nMEMORY_INITIALIZATION_VECTOR=\n");
     for (int i = 0; i < instructionCount; i++) {
       replaceInstructionLabel(instructions[i]);
       String tempOutput = generateCode(instructions[i]);
