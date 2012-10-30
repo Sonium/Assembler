@@ -130,7 +130,7 @@ public class SixLixAssembler extends Assembler {
       }
       Long imm = Long.decode(ops[1].name);
       String immStr = numToStr(instruction, imm, 6);
-      code = "1110" + getReg(instruction, ops[0].name) + immStr; // opcode +
+      code = "1101" + getReg(instruction, ops[0].name) + immStr; // opcode +
                                                                  // register +
                                                                  // immediate
                                                                  // (offset)
