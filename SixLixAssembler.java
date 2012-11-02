@@ -322,7 +322,8 @@ public class SixLixAssembler extends Assembler {
         code += "0001010" + numBits.substring(24, 34);
         numInst = 2;
 
-      } else if (num < 1024 * 1024 && num >= 0) { // if immediate is bigger than 20bits
+      } else if (num < 1024 * 1024 && num >= 0) { // if immediate is bigger than
+                                                  // 20bits
         reqCodeLen = 17 * 3 + 2 * 2;
         code = "0000000" + getReg(instruction, "$v0")
             + getReg(instruction, "$0") + "11" + ",\n";
@@ -435,9 +436,9 @@ public class SixLixAssembler extends Assembler {
     else if (instruction.operator.equalsIgnoreCase("li")) {
       // long num = Long.parseLong(instruction.operands[0].name, 16);
       long num = Long.decode(instruction.operands[0].name);
-      if (num < 1024) {
+      if (num < 1024 && num >= 0) {
         programCounter += 2; // zero out and a soli
-      } else if (num < 1024 * 1024) {
+      } else if (num < 1024 * 1024 && num >= 0) {
         programCounter += 3; // zero out and 2 soli
       } else {
         programCounter += 4; // zero out or 4 solis
