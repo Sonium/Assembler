@@ -314,7 +314,7 @@ public class SixLixAssembler extends Assembler {
       int numInst = 0; // sets the number of instructions used
       long num = Long.decode(instruction.operands[0].name);
       String numBits = numToStr(instruction, num, 34);
-      if (num < 1024) { // if the immediate is bigger than 10 bits
+      if (num < 1024 && num >= 0) { // if the immediate is bigger than 10 bits
         reqCodeLen = 17 * 2 + 2;
         code = "0000000" + getReg(instruction, "$v0")
             + getReg(instruction, "$0") + "11" + ",\n";
@@ -322,7 +322,7 @@ public class SixLixAssembler extends Assembler {
         code += "0001010" + numBits.substring(24, 34);
         numInst = 2;
 
-      } else if (num < 1024 * 1024) { // if immediate is bigger than 20bits
+      } else if (num < 1024 * 1024 && num >= 0) { // if immediate is bigger than 20bits
         reqCodeLen = 17 * 3 + 2 * 2;
         code = "0000000" + getReg(instruction, "$v0")
             + getReg(instruction, "$0") + "11" + ",\n";
