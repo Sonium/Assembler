@@ -572,7 +572,17 @@ public class SixLixAssembler extends Assembler {
 
   @Override
   void replaceMemoryLabel() {
-
+      for(int i = 0; i < memory.size; i++){        
+         if(!memory.entries[i].data.startsWith("0x")){
+           try{
+           Long label_addr = labelMap.get(memory.entries[i].data);
+           String test = Long.toHexString(label_addr);
+           memory.entries[i].data = "0x" + Long.toHexString(label_addr);
+           }catch(Exception e){
+             System.err.println("Error: no address associated for label " +  memory.entries[i].data);
+           }          
+         }
+      }
   }
 
   public static void main(String[] arg) throws IOException {
